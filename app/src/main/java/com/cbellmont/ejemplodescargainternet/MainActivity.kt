@@ -1,10 +1,12 @@
 package com.cbellmont.ejemplodescargainternet
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.cbellmont.ejemplodescargainternet.databinding.ActivityMainBinding
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 interface MainActivityInterface {
     suspend fun onFilmsReceived(listFilms : List<Film>)
@@ -22,12 +24,9 @@ class MainActivity : AppCompatActivity(), MainActivityInterface {
         val view = binding.root
         setContentView(view)
 
-
         setContentView(R.layout.activity_main)
-
-
-        CoroutineScope(Dispatchers.IO).launch{
-            GetAllFilms.send(this@MainActivity)
+        lifecycleScope.launch{
+            GetAllFilms.send().toString()
         }
     }
 
@@ -35,7 +34,7 @@ class MainActivity : AppCompatActivity(), MainActivityInterface {
         withContext(Dispatchers.Main){
             binding.tvFilms.text = ""
             listFilms.forEach {
-                tvFilms.append(it.toString())
+                binding.tvFilms.append(it.toString())
             }
         }
 

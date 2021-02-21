@@ -6,51 +6,46 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
+import java.lang.Exception
 
 
 class GetAllFilms {
     companion object {
-        suspend fun send(mainActivity : MainActivityInterface?) {
+        suspend fun send() : List<Film> = withContext(Dispatchers.IO){
 
             val client = OkHttpClient()
             val url = "https://swapi.dev/api/films/"
             val request = Request.Builder()
                 .url(url)
                 .build()
+
+
             val call = client.newCall(request)
-            call.enqueue(object : Callback {
+            try {
+                val response =  call.execute()
+                val bodyInString = response.body?.string()
+                bodyInString?.let {
+                    Log.w("GetAllFilms", bodyInString)
+                    val JsonObject = JSONObject(bodyInString)
 
-                override fun onFailure(call: Call, e: IOException) {
-                    e.printStackTrace()
-                    Log.e("GetAllFilms", call.toString())
+                    val results = JsonObject.optJSONArray("results")
+                    results?.let {
+                        Log.w("GetAllFilms", results.toString())
+                        val gson = Gson()
 
-                }
+                        val itemType = object : TypeToken<List<Film>>() {}.type
 
-                override fun onResponse(call: Call, response: Response) {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val bodyInString = response.body?.string()
-                        bodyInString?.let {
-                            Log.w("GetAllFilms", bodyInString)
-                            val JsonObject = JSONObject(bodyInString)
-
-                            val results = JsonObject.optJSONArray("results")
-                            results?.let {
-                                Log.w("GetAllFilms", results.toString())
-                                val gson = Gson()
-
-                                val itemType = object : TypeToken<List<Film>>() {}.type
-
-                                val list = gson.fromJson<List<Film>>(results.toString(), itemType)
-
-                                mainActivity?.onFilmsReceived(list)
-                            }
-                        }
+                        return@withContext gson.fromJson(results.toString(), itemType)
                     }
                 }
-            })
+            } catch (ex : Exception) {
+                Log.e("TAG", "Ups, algo ha ido mal")
+            }
+            listOf()
         }
     }
 }

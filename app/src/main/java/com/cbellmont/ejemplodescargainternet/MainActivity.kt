@@ -4,17 +4,12 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.cbellmont.ejemplodescargainternet.databinding.ActivityMainBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
 
-interface MainActivityInterface {
-    suspend fun onFilmsReceived(listFilms : List<Film>)
-}
 
 // IMPORTANT: Passing the activity to a the receiver is not a good practice, it may cause issues
 // with the activity-s lifecycle. We are doing it just to keep the focus on the target of this example
-class MainActivity : AppCompatActivity(), MainActivityInterface {
+class MainActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityMainBinding
 
@@ -25,18 +20,16 @@ class MainActivity : AppCompatActivity(), MainActivityInterface {
         setContentView(view)
 
         setContentView(R.layout.activity_main)
-        lifecycleScope.launch{
-            GetAllFilms.send().toString()
+        val resultado = lifecycleScope.async{
+            GetAllFilms.send()
         }
+        onFilmsReceived(resultado.await())
     }
 
-    override suspend fun onFilmsReceived(listFilms : List<Film>) {
-        withContext(Dispatchers.Main){
-            binding.tvFilms.text = ""
-            listFilms.forEach {
-                binding.tvFilms.append(it.toString())
-            }
+    fun onFilmsReceived(listFilms : List<Film>) {
+        binding.tvFilms.text = ""
+        listFilms.forEach {
+            binding.tvFilms.append(it.toString())
         }
-
     }
 }
